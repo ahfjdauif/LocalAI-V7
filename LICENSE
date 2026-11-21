@@ -1,24 +1,35 @@
-This is free and unencumbered software released into the public domain.
+本地AI（在线部署版）许可协议 / License
+======================================================
+Copyright (c) 2026 折**  All Rights Reserved.
 
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
+本仓库中的软件本体（包括但不限于打包架构、自定义启动程序、前端界面、交互逻辑、
+启动与端口适配脚本、本地模型路径配置、整合与适配方案、说明文档）著作权归作者所有，
+保留全部权利。
 
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
+在遵守以下条件的前提下，作者授予个人用户**有限、非独占、不可转让、非商用**的使用许可：
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
+1. 允许个人用户在自有设备上安装、运行本软件；
+2. 允许个人用户出于学习与研究目的阅读、参考本仓库源码；
+3. 允许个人用户自行添加、替换、删除合规的本地 GGUF 模型。
 
-For more information, please refer to <https://unlicense.org>
+以下行为被明确禁止：
+
+1. 将本软件、封装框架、打包方案用于付费售卖、网盘倒卖、社群收费、课程打包、商业服务；
+2. 删除、遮挡、修改本软件内置的版权信息与作者署名；
+3. 修改后重新打包、更名发布、对外分发改版衍生版本；
+4. 以商业目的抽取、复用本项目的核心封装逻辑；
+5. 将本软件部署在公共服务器或对外提供公共 AI 服务。
+
+第三方组件声明 / Third-party notices
+------------------------------------------------------
+- Ollama 推理引擎：MIT License，版权归 Ollama 原作者所有。
+  本仓库不包含其二进制文件与运行环境。
+- Qwen2.5 系列模型权重：版权归阿里通义千问团队所有，遵循其各自许可
+  （apache-2.0）。本仓库不包含任何模型权重文件。
+- pywebview 及其依赖：遵循其各自开源许可。
+
+免责声明 / Disclaimer
+------------------------------------------------------
+本软件按「现状」提供，不附带任何明示或暗示的担保。因使用本软件产生的任何直接或间接
+后果（包括但不限于数据丢失、设备损坏、AI 生成内容的合规性）由使用者自行承担。
+AI 生成内容由算法自动产生，不构成任何专业建议。
