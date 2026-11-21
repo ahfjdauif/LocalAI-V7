@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地AI · 在线部署</title>
+<style>
+/* ===== 本地AI · 部署页（蓝色系精细化） ===== */
+:root{
+  --brand:#2563eb;--brand-2:#0ea5e9;--ink:#1f2937;--muted:#6b7280;--line:#e6ebf3;
+  --shadow-1:0 1px 2px rgba(15,23,42,.04),0 6px 18px rgba(15,23,42,.06);
+  --shadow-2:0 14px 34px rgba(15,23,42,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;
+  background:radial-gradient(1100px 460px at 8% -8%,#e8f1ff 0%,transparent 62%),
+    radial-gradient(900px 420px at 100% 0%,#e6f8ff 0%,transparent 58%),#f4f7fc;
+  color:var(--ink);min-height:100vh;padding:28px 24px 40px}
+.wrap{max-width:880px;margin:0 auto;animation:pageIn .35s ease-out}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+header{margin-bottom:22px}
+header h1{font-size:23px;font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:10px}
+.brand.sm{position:relative;width:32px;height:32px;border-radius:10px;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(140deg,#60a5fa,#2563eb);display:grid;place-items:center;color:#fff;
+  font-weight:800;font-size:13px;box-shadow:0 4px 12px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.4)}
+.brand.sm img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+header .sub{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.7;max-width:760px}
+.badge{display:inline-block;font-size:12px;color:#1d4ed8;background:#eef4ff;
+  border:1px solid #cfe0ff;border-radius:999px;padding:4px 13px;margin-bottom:10px}
+
+.card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:18px;
+  padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-1);transition:.2s}
+.card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.card .hd{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.card .no{flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(140deg,#3b82f6,#2563eb);color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(37,99,235,.28)}
+.card h2{font-size:15.5px;font-weight:650;letter-spacing:.2px}
+.card .desc{font-size:12.5px;color:var(--muted);line-height:1.75}
+.state{font-size:12px;padding:3px 11px;border-radius:999px;margin-left:auto;white-space:nowrap}
+.state.ok{color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0}
+.state.wait{color:#b45309;background:#fffbeb;border:1px solid #fde68a}
+.path{display:inline-block;background:#f5f8fd;border:1px solid #e6ecf5;border-radius:10px;
+  padding:7px 12px;font-family:Consolas,ui-monospace,monospace;font-size:12.5px;color:#44506a;
+  word-break:break-all;margin-top:10px}
+
+/* 模型卡片 */
+.models{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.m{display:flex;align-items:flex-start;gap:12px;border:1px solid #e6ecf5;border-radius:13px;
+  padding:12px 14px;cursor:pointer;background:#fff;transition:.18s}
+.m:hover{border-color:#bcd3ff;background:#f8fbff;transform:translateY(-1px)}
+.m.on{border-color:#3b82f6;background:linear-gradient(180deg,#f2f7ff,#eef4ff);
+  box-shadow:0 6px 16px rgba(37,99,235,.12)}
+.m input{margin-top:3px;accent-color:#2563eb;width:15px;height:15px;cursor:pointer}
+.m .t{font-size:13.5px;font-weight:650;color:#1b2a44}
+.m .n{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
+.m .s{margin-left:auto;font-size:12px;color:#2563eb;white-space:nowrap;font-weight:600;
+  background:#eff5ff;border:1px solid #dbe7ff;border-radius:8px;padding:2px 9px}
+
+/* 按钮 */
+.btns{display:flex;gap:11px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn{border:none;border-radius:11px;padding:11px 24px;font-size:14px;font-family:inherit;
+  cursor:pointer;transition:.18s}
+.btn.primary{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;
+  box-shadow:0 6px 18px rgba(37,99,235,.26)}
+.btn.primary:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(37,99,235,.32)}
+.btn.primary:disabled{background:#c3ccda;box-shadow:none;cursor:not-allowed}
+.btn.ghost{background:#fff;color:#41506b;border:1px solid #dde5f0}
+.btn.ghost:not(:disabled):hover{background:#f5f8fd;border-color:#c9d6e8}
+.btn.ghost:disabled{color:#a8b2c1;cursor:not-allowed;background:#fafbfe}
+.hint{font-size:12px;color:#98a2b3}
+
+/* 进度 */
+#progBox{display:none}
+.bar{height:12px;background:#eaf0f9;border-radius:999px;overflow:hidden;margin-top:6px;
+  box-shadow:inset 0 1px 3px rgba(15,23,42,.06)}
+.bar>i{display:block;height:100%;width:0;border-radius:999px;transition:width .35s ease;
+  background:linear-gradient(90deg,#2563eb,#0ea5e9);position:relative;overflow:hidden}
+.bar>i::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:translateX(-100%);animation:shine 1.6s infinite}
+@keyframes shine{to{transform:translateX(100%)}}
+.progTop{display:flex;align-items:baseline;gap:10px}
+.progTop .pct{font-size:22px;font-weight:800;color:#1d4ed8;letter-spacing:.5px}
+.progTop .stage{font-size:13px;color:#41506b}
+.meta{display:flex;gap:18px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.meta b{color:#374151;font-weight:650}
+#log{margin-top:12px;background:#0d1b34;color:#cbd5e1;border-radius:12px;padding:11px 13px;
+  font-family:Consolas,ui-monospace,monospace;font-size:11.5px;line-height:1.75;
+  max-height:140px;overflow-y:auto;display:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.err{display:none;margin-top:12px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;
+  border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.75}
+.tip{background:linear-gradient(180deg,#f2fdf6,#eefbf3);border:1px solid #c9f0d8;
+  border-radius:14px;padding:13px 17px;font-size:12.5px;color:#14653c;line-height:1.85}
+footer{margin-top:18px;text-align:center;font-size:12px;color:#a3adbd}
+.done{display:none;background:linear-gradient(180deg,#f3f8ff,#eef4ff);border:1px solid #cfe0ff;
+  border-radius:14px;padding:16px 18px;font-size:13px;color:#1e40af;animation:msgIn .3s ease-out}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.done b{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">首次使用 · 在线部署</span>
+    <h1><span class="brand sm"><span>AI</span><img src="app.ico" alt="" onerror="this.remove()"></span>本地AI 部署向导</h1>
+    <div class="sub">软件本体已安装完成。下面两步完成后即可开始对话：运行环境与模型均由本软件联网下载，无需另装其他安装包。</div>
+  </header>
+
+  <div class="card">
+    <div class="hd">
+      <div class="no">1</div>
+      <h2>运行环境（Ollama 推理引擎）</h2>
+      <span class="state wait" id="envState">检测中…</span>
+    </div>
+    <div class="desc">这是驱动本地模型的核心引擎，将自动下载并解压到下面的目录：</div>
+    <div class="path" id="envPath">读取中…</div>
+    <div class="desc" style="margin-top:8px">下载源：国内加速镜像与官方地址自动测速择优，多连接分段下载，速度不达预期会自动换源。</div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <div class="no">2</div>
+      <h2>选择要下载的模型</h2>
+      <span class="state" id="mdlState">未开始</span>
+    </div>
+    <div class="desc">模型文件来自魔搭社区（ModelScope）官方仓库，可直接下载；显存/内存紧张时选小模型更流畅。</div>
+    <div class="models" id="models"></div>
+    <div class="path" id="mdlPath">读取中…</div>
+  </div>
+
+  <div class="card" id="progCard">
+    <div class="hd">
+      <div class="no">3</div>
+      <h2>部署进度</h2>
+    </div>
+    <div id="progBox">
+      <div class="progTop">
+        <span class="pct" id="pct">0%</span>
+        <span class="stage" id="stage">准备中…</span>
+      </div>
+      <div class="bar"><i id="barIn"></i></div>
+      <div class="meta">
+        <span>已下载 <b id="dl">0 B</b> / <b id="tt">0 B</b></span>
+        <span>速度 <b id="sp">0 KB/s</b></span>
+        <span>预计剩余 <b id="eta">—</b></span>
+      </div>
+      <div id="log"></div>
+      <div class="err" id="err"></div>
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="go">开始部署</button>
+      <button class="btn ghost" id="cancel" disabled>取消</button>
+      <span class="hint" id="hint">部署过程中请保持网络连接，不要关闭本窗口。</span>
+    </div>
+    <div class="done" id="doneBox">
+      <b>部署完成。</b>运行环境与模型已就绪，点击右侧按钮进入聊天界面。
+      <div class="btns"><button class="btn primary" id="toChat">进入聊天界面</button></div>
+    </div>
+  </div>
+
+  <div class="tip" style="margin-bottom:12px">
+    想换更大或更小的模型？打开 <a href="/models.html" style="color:#1d4ed8">模型中心</a> 看全部档位与用途说明。
+  </div>
+  <div class="tip">
+    提示：下载体积较大（7B 约 4.4 GB、3B 约 2.0 GB、1.5B 约 1.0 GB），请确保磁盘空间充足、网络稳定；
+    中途失败可直接点「开始部署」续传（已下载部分会重新校验后继续）。
+  </div>
+  <footer>本地AI · 在线部署版 V7 &nbsp;|&nbsp; 完全本地运行 · 断网可用</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let chosen = 'qwen2.5:7b';
+let polling = null;
+
+function human(n) {
+  if (!n) return '0 B';
+  const u = ['B','KB','MB','GB'];
+  let i = 0; let v = n;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return v.toFixed(v >= 100 ? 0 : 1) + ' ' + u[i];
+}
+function log(t) {
+  const el = $('log');
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  line.textContent = '[' + new Date().toLocaleTimeString('zh-CN', {hour12:false}) + '] ' + t;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function loadCatalog() {
+  try {
+    const r = await fetch('/api/setup/catalog');
+    const j = await r.json();
+    const box = $('models');
+    box.innerHTML = '';
+    (j.models || []).forEach(m => {
+      const d = document.createElement('label');
+      d.className = 'm' + (m.key === chosen ? ' on' : '');
+      d.innerHTML = '<input type="radio" name="mdl" value="' + m.key + '"' +
+        (m.key === chosen ? ' checked' : '') + '>' +
+        '<div><div class="t">' + m.label + '</div><div class="n">' + m.note + '</div></div>' +
+        '<div class="s">' + human(m.size) + '</div>';
+      d.querySelector('input').addEventListener('change', e => {
+        chosen = e.target.value;
+        document.querySelectorAll('.m').forEach(x => x.classList.remove('on'));
+        d.classList.add('on');
+      });
+      box.appendChild(d);
+    });
+  } catch (e) {}
+}
+
+async function refresh() {
+  try {
+    const r = await fetch('/api/setup/status');
+    const st = await r.json();
+    // 环境状态
+    $('envPath').textContent = st.env_dir || '';
+    $('mdlPath').textContent = st.models_dir || '';
+    $('envState').textContent = st.env ? '已就绪' : '待下载';
+    $('envState').className = 'state ' + (st.env ? 'ok' : 'wait');
+    if (st.env && st.has_model) {
+      $('mdlState').textContent = '已就绪';
+      $('mdlState').className = 'state ok';
+    } else if (st.busy) {
+      const t = st.stage === 'env' ? '环境下载中'
+        : (st.stage === 'create' ? '注册中' : '下载中');
+      $('mdlState').textContent = t;
+      $('mdlState').className = 'state wait';
+    } else if (st.stage === 'error') {
+      $('mdlState').textContent = '失败';
+      $('mdlState').className = 'state wait';
+    } else if (st.stage === 'idle') {
+      $('mdlState').textContent = '未开始';
+      $('mdlState').className = 'state wait';
+    }
+    // 进度
+    if (st.stage && st.stage !== 'idle') {
+      $('progBox').style.display = 'block';
+      $('pct').textContent = (st.percent || 0) + '%';
+      $('barIn').style.width = (st.percent || 0) + '%';
+      $('stage').textContent = st.message || '';
+      $('dl').textContent = human(st.downloaded);
+      $('tt').textContent = human(st.total);
+      $('sp').textContent = human(st.speed) + '/s';
+      if (st.speed > 0 && st.total > st.downloaded) {
+        const left = (st.total - st.downloaded) / st.speed;
+        $('eta').textContent = left > 3600 ? '> 1 小时'
+          : Math.floor(left / 60) + ' 分 ' + Math.floor(left % 60) + ' 秒';
+      }
+    }
+    // 按钮态
+    if (st.busy) {
+      $('go').disabled = true; $('cancel').disabled = false;
+      $('hint').textContent = '正在部署，请勿关闭窗口。';
+    } else {
+      $('go').disabled = (st.env && st.has_model);
+      $('cancel').disabled = true;
+      $('hint').textContent = (st.env && st.has_model)
+        ? '环境与模型均已就绪，可直接进入聊天界面。'
+        : '部署过程中请保持网络连接，不要关闭本窗口。';
+    }
+    if (st.error) {
+      $('err').style.display = 'block';
+      $('err').textContent = '部署失败：' + st.error;
+      log(st.error);
+    } else {
+      $('err').style.display = 'none';
+    }
+    if (st.stage === 'done' || (st.env && st.has_model)) {
+      $('mdlState').textContent = '已就绪';
+      $('mdlState').className = 'state ok';
+      $('doneBox').style.display = 'block';
+      $('go').style.display = 'none';
+      $('cancel').style.display = 'none';
+    }
+  } catch (e) {}
+}
+
+async function start() {
+  $('go').disabled = true;
+  $('err').style.display = 'none';
+  log('开始部署，模型：' + chosen);
+  try {
+    const r = await fetch('/api/setup/start', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: chosen})
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      log('启动失败：' + (j.error || r.status));
+    }
+  } catch (e) { log('启动失败：' + e.message); }
+  refresh();
+}
+
+$('go').addEventListener('click', start);
+$('cancel').addEventListener('click', async () => {
+  log('已请求取消…');
+  try { await fetch('/api/setup/cancel', {method: 'POST'}); } catch (e) {}
+});
+$('toChat').addEventListener('click', () => { location.href = '/chat.html'; });
+
+loadCatalog();
+refresh();
+polling = setInterval(refresh, 900);
+</script>
+</body>
+</html>

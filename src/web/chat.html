@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地AI · 通义千问</title>
+<style>
+/* ===== 本地AI · 界面（蓝色系精细化） ===== */
+:root{
+  --brand:#2563eb; --brand-2:#0ea5e9; --brand-deep:#1d4ed8;
+  --ink:#1f2937; --ink-2:#4b5563; --muted:#6b7280; --line:#e5e7eb;
+  --bg:#f2f6fc; --card:#ffffff; --radius:16px;
+  --shadow-1:0 1px 2px rgba(15,23,42,.05),0 4px 14px rgba(15,23,42,.06);
+  --shadow-2:0 10px 30px rgba(15,23,42,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;background:
+  radial-gradient(1200px 500px at 10% -10%,#e8f0ff 0%,transparent 60%),
+  radial-gradient(900px 400px at 100% 0%,#e6f7ff 0%,transparent 55%),var(--bg);
+  color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ---------- 顶栏 ---------- */
+header{position:relative;background:linear-gradient(118deg,#1e40af 0%,#2563eb 45%,#0ea5e9 100%);
+  color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;
+  box-shadow:0 6px 20px rgba(30,64,175,.22);z-index:2}
+header::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(600px 120px at 0% 0%,rgba(255,255,255,.22),transparent 70%);pointer-events:none}
+.brand{position:relative;width:38px;height:38px;border-radius:12px;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(140deg,#60a5fa,#2563eb);display:grid;place-items:center;
+  color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;
+  box-shadow:0 4px 12px rgba(2,32,71,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+.brand img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+header .logo{font-size:20px}
+header h1{font-size:17px;font-weight:700;letter-spacing:.5px;line-height:1.2}
+header .sub{font-size:11px;opacity:.85;margin-top:2px}
+header select{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.16);
+  color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:9px;padding:5px 26px 5px 11px;
+  font-size:12px;font-family:inherit;outline:none;flex-shrink:0;max-width:190px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,rgba(255,255,255,.85) 50%),
+    linear-gradient(135deg,rgba(255,255,255,.85) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;transition:.18s}
+header select:hover{background-color:rgba(255,255,255,.26)}
+header select:focus{box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+header select option{color:var(--ink);background:#fff}
+header #svcBtn{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4);
+  border-radius:9px;padding:5px 12px;font-size:12px;font-family:inherit;cursor:pointer;
+  margin-left:2px;white-space:nowrap;flex-shrink:0;min-width:92px;transition:.18s}
+header #svcBtn:hover{background:rgba(255,255,255,.3);transform:translateY(-1px)}
+header #svcBtn.off{background:rgba(239,68,68,.38);border-color:rgba(248,113,113,.7)}
+header .status{margin-left:auto;font-size:12px;background:rgba(255,255,255,.2);
+  padding:4px 12px;border-radius:999px;white-space:nowrap;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.25);transition:.2s}
+
+/* ---------- 工具条 ---------- */
+.toolbar{display:flex;gap:8px;align-items:center;padding:9px 20px;background:rgba(255,255,255,.82);
+  backdrop-filter:blur(8px);border-bottom:1px solid rgba(226,232,240,.9);flex-shrink:0;flex-wrap:wrap}
+.toolbar button{background:#eef3ff;color:#2c3e8f;border:1px solid #d6e0ff;border-radius:9px;
+  padding:6px 13px;font-size:12px;font-family:inherit;cursor:pointer;transition:.16s}
+.toolbar button:hover{background:#e2ebff;transform:translateY(-1px);box-shadow:0 3px 8px rgba(37,99,235,.14)}
+.toolbar button:active{transform:translateY(0)}
+.toolbar .hint{font-size:11px;color:#9aa4b2}
+#loaded{display:none;font-size:12px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;
+  border-radius:9px;padding:5px 11px;box-shadow:var(--shadow-1)}
+#loaded button{border:none;background:none;color:#2563eb;cursor:pointer;font-size:12px;margin-left:6px}
+
+/* ---------- 聊天区 ---------- */
+main{flex:1;overflow-y:auto;padding:20px 22px 8px;display:flex;flex-direction:column;gap:14px;
+  scroll-behavior:smooth}
+main::-webkit-scrollbar{width:9px}
+main::-webkit-scrollbar-thumb{background:#cfd9e6;border-radius:9px;border:2px solid transparent;
+  background-clip:content-box}
+main::-webkit-scrollbar-thumb:hover{background:#b7c4d6;background-clip:content-box}
+main::-webkit-scrollbar-track{background:transparent}
+.msg{max-width:80%;padding:11px 15px;border-radius:16px;line-height:1.72;font-size:14px;
+  white-space:pre-wrap;word-break:break-word;animation:msgIn .24s cubic-bezier(.2,.8,.3,1);
+  box-shadow:var(--shadow-1)}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;
+  border-bottom-right-radius:6px;box-shadow:0 6px 18px rgba(37,99,235,.25)}
+.msg.assistant{align-self:flex-start;background:#fff;border:1px solid #e8edf5;
+  border-bottom-left-radius:6px;color:#243043}
+.msg.system-card{align-self:center;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;
+  font-size:12px;max-width:95%;padding:7px 12px;border-radius:12px;box-shadow:none}
+.msg.error{align-self:center;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;
+  font-size:13px;max-width:92%;border-radius:12px}
+.msg .thumb{display:block;max-width:240px;border-radius:12px;margin-top:8px;
+  border:1px solid rgba(255,255,255,.35)}
+.typing{align-self:flex-start;color:#8b95a5;font-size:13px;padding:6px 10px;
+  animation:pulse 1.15s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* ---------- 输入区 ---------- */
+footer{flex-shrink:0;display:flex;gap:10px;padding:14px 20px 18px;background:transparent;
+  align-items:flex-end}
+textarea{flex:1;resize:none;background:#fff;border:1px solid #dbe3ee;border-radius:16px;
+  padding:13px 16px;font-size:14px;font-family:inherit;color:var(--ink);outline:none;
+  min-height:50px;max-height:150px;line-height:1.6;box-shadow:var(--shadow-1);
+  transition:border-color .18s,box-shadow .18s}
+textarea::placeholder{color:#a6b0bf}
+textarea:focus{border-color:#93b4ff;box-shadow:0 0 0 4px rgba(37,99,235,.12),var(--shadow-1)}
+button.send{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;
+  border-radius:15px;padding:13px 26px;font-size:14px;font-family:inherit;cursor:pointer;
+  box-shadow:0 6px 18px rgba(37,99,235,.28);transition:.18s}
+button.send:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(37,99,235,.34)}
+button.send:not(:disabled):active{transform:translateY(0)}
+button.send:disabled{background:#c3ccda;box-shadow:none;cursor:not-allowed}
+
+/* ---------- 批量面板 ---------- */
+#batchPanel{display:none;flex-shrink:0;background:rgba(255,255,255,.94);border-top:1px solid var(--line);
+  padding:14px 20px;max-height:45%;overflow-y:auto;box-shadow:0 -8px 24px rgba(15,23,42,.05)}
+#batchPanel h3{font-size:14px;margin-bottom:10px;color:var(--ink)}
+#batchPanel .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+#batchPanel input[type=text]{flex:1;min-width:200px;border:1px solid #dbe3ee;border-radius:10px;
+  padding:8px 12px;font-size:13px;font-family:inherit;outline:none;transition:.16s}
+#batchPanel input[type=text]:focus{border-color:#93b4ff;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+#batchPanel button{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;
+  border-radius:10px;padding:8px 16px;font-size:13px;font-family:inherit;cursor:pointer}
+#batchPanel button:disabled{background:#c3ccda;cursor:not-allowed}
+#batchList{font-size:12px;max-height:180px;overflow-y:auto;color:var(--ink-2)}
+#batchList div{padding:4px 0;border-bottom:1px dashed #eef2f7}
+#batchList .ok{color:#16a34a}#batchList .err{color:#dc2626}
+input[type=file]{display:none}
+.hidden-file{display:none}
+
+/* ---------- 关于弹窗 ---------- */
+#aboutBtn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;
+  border-radius:9px;padding:5px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;
+  flex-shrink:0;white-space:nowrap;transition:.18s}
+#aboutBtn:hover{background:rgba(255,255,255,.3);transform:translateY(-1px)}
+.modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);
+  backdrop-filter:blur(3px);z-index:99;align-items:center;justify-content:center}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:18px;max-width:640px;width:92%;max-height:82vh;
+  overflow-y:auto;padding:26px 30px;box-shadow:0 24px 60px rgba(2,32,71,.28);
+  animation:modalIn .22s ease-out}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.modal h2{font-size:18px;color:#16233b;margin:0 0 4px}
+.modal .m-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.modal p{font-size:13px;color:#3b4658;line-height:1.9;margin:11px 0}
+.modal .m-close{float:right;background:#f2f5fa;border:1px solid #e3e9f2;border-radius:9px;
+  padding:6px 16px;font-size:13px;font-family:inherit;cursor:pointer;color:#41506b;transition:.16s}
+.modal .m-close:hover{background:#e8eef8}
+
+/* ================= 功能增强样式 ================= */
+:root{--chat-font:14px}
+.msg{font-size:var(--chat-font,14px)}
+.msg-body{display:block;white-space:pre-wrap;word-break:break-word}
+.msg-actions{display:flex;gap:6px;margin-top:8px;opacity:0;transition:opacity .15s}
+.msg.assistant:hover .msg-actions,.msg.assistant:focus-within .msg-actions{opacity:1}
+.msg-actions button{border:1px solid #dbe3ee;background:#f7f9fd;color:#41506b;border-radius:7px;
+  font-size:11.5px;padding:2px 9px;cursor:pointer;font-family:inherit}
+.msg-actions button:hover{background:#eef3ff;border-color:#c6d8ff;color:#1d4ed8}
+.locked{opacity:.42;filter:grayscale(.4);cursor:not-allowed!important}
+header .hbtn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;
+  border-radius:9px;padding:5px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;
+  flex-shrink:0;white-space:nowrap;transition:.18s}
+header .hbtn:hover{background:rgba(255,255,255,.3);transform:translateY(-1px)}
+#stopBtn{background:#fff;color:#41506b;border:1px solid #dbe3ee;border-radius:15px;
+  padding:13px 18px;font-size:14px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow-1)}
+#stopBtn:hover{background:#f5f8fd;border-color:#c9d6e8}
+#envHint{display:none;align-items:center;gap:6px;font-size:12px;color:#b45309;background:#fffbeb;
+  border:1px solid #fde68a;border-radius:9px;padding:4px 10px;cursor:pointer}
+.diag-list{max-height:46vh;overflow:auto;margin-top:12px}
+.diag-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed #eef2f7;font-size:13px}
+.diag-item .dt{font-size:11.5px;color:#8b95a5;word-break:break-all}
+.diag-item .code{margin-left:auto;flex-shrink:0;font-family:Consolas,monospace;font-size:11.5px;
+  color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:1px 7px}
+.diag-sum{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:13px;
+  background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.diag-sum.bad{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);
+  background:#111c30;color:#e8efff;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;
+  pointer-events:none;transition:.25s;z-index:120;box-shadow:0 10px 30px rgba(2,32,71,.35)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.err-line{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px;color:#9a3412;
+  font-family:Consolas,monospace;flex-wrap:wrap}
+.err-line button{border:1px solid #fdba74;background:#fff7ed;color:#9a3412;border-radius:7px;
+  padding:2px 9px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.err-line button:hover{background:#ffedd5}
+.set-row{display:flex;align-items:center;gap:12px;margin:14px 0;font-size:13px;color:#3b4658}
+.set-row input[type=range]{flex:1;accent-color:#2563eb}
+.set-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.set-actions button{border:1px solid #dbe3ee;background:#f7f9fd;color:#2c3e8f;border-radius:10px;
+  padding:8px 14px;font-size:12.5px;font-family:inherit;cursor:pointer}
+.set-actions button:hover{background:#eef3ff;border-color:#c6d8ff}
+.set-actions button.danger{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>AI</span><img src="app.ico" alt="" onerror="this.remove()"></div>
+  <div>
+    <h1>本地AI</h1>
+    <div class="sub">通义千问 · 完全离线免费运行</div>
+  </div>
+  <select id="modelSel" title="选择模型"></select>
+  <select id="runModeSel" title="运行模式（切换后自动重启AI服务）">
+    <option value="gpu">GPU 运行</option>
+    <option value="cpu">CPU 运行</option>
+    <option value="hybrid">GPU+CPU 联合</option>
+  </select>
+  <button id="envHint" title="当前没有可运行环境">⚠ 无运行环境</button>
+  <button id="diagBtn" class="hbtn" title="环境自检">🩺 自检</button>
+  <button id="setBtn" class="hbtn" title="设置">⚙ 设置</button>
+  <button id="svcBtn" title="一键开启/关闭本地AI服务">AI服务：…</button>
+  <button id="aboutBtn" title="版权与免责声明">ℹ️ 关于</button>
+  <span class="status" id="status">连接中…</span>
+</header>
+<div class="toolbar">
+  <button id="btnDoc">📄 上传文档</button>
+  <button id="btnImg">🖼️ 上传图片</button>
+  <button id="btnBatch">🗂️ 批量处理</button>
+  <button id="btnNew">🧹 新建对话</button>
+  <button id="btnExport">⬇️ 导出对话</button>
+  <button id="btnModels" onclick="location.href='/models.html'">🧩 模型中心</button>
+  <span class="hint" id="hint">支持 Word / Excel / PDF / PPT / 文本 / 图片</span>
+  <span id="loaded"></span>
+</div>
+<input type="file" id="fileDoc" class="hidden-file" multiple accept=".docx,.xlsx,.pdf,.pptx,.txt,.md,.csv,.log,.json,.xml">
+<input type="file" id="fileImg" class="hidden-file" accept=".png,.jpg,.jpeg,.webp,.gif">
+<input type="file" id="fileDir" class="hidden-file" webkitdirectory directory>
+<div id="batchPanel">
+  <h3>批量处理文件</h3>
+  <div class="row">
+    <button id="btnChooseDir">选择文件夹</button>
+    <input type="text" id="batchReq" placeholder="处理要求，例如：提取每个文件的要点，用一句话概括">
+    <button id="btnRunBatch">开始处理</button>
+  </div>
+  <div id="batchList"></div>
+</div>
+<main id="chat"></main>
+<footer>
+  <textarea id="input" placeholder="输入你的问题，按 Enter 发送（Shift+Enter 换行）。已上传的文档会自动作为背景知识"></textarea>
+  <button id="stopBtn" style="display:none">■ 停止</button>
+  <button class="send" id="send">发送</button>
+</footer>
+<div class="modal-mask" id="envLockMask">
+  <div class="modal" style="max-width:460px">
+    <button class="m-close" onclick="document.getElementById('envLockMask').classList.remove('show')">关闭</button>
+    <h2>没有可运行的环境</h2>
+    <div class="m-sub">当前检测不到「AI 推理服务 + 可用模型」</div>
+    <p>聊天需要本机的推理服务在运行，并且已经部署好模型。你可以：</p>
+    <p>① 点右上角「AI服务」把服务打开；<br>② 或者重新走一遍部署向导下载运行环境与模型。</p>
+    <div class="set-actions">
+      <button onclick="location.href='/setup.html'">去部署向导</button>
+      <button onclick="restartService()">重启 AI 服务</button>
+      <button onclick="document.getElementById('envLockMask').classList.remove('show')">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="diagMask">
+  <div class="modal">
+    <button class="m-close" onclick="document.getElementById('diagMask').classList.remove('show')">关闭</button>
+    <h2>环境自检</h2>
+    <div class="m-sub">逐项检查运行环境；有问题会给出错误码，可直接复制发给作者</div>
+    <div class="diag-list" id="diagBody"><div style="color:#6b7280;font-size:13px">正在检查…</div></div>
+    <div class="set-actions">
+      <button id="diagCopy">复制自检报告</button>
+      <button onclick="openDiag()">重新检查</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="setMask">
+  <div class="modal" style="max-width:520px">
+    <button class="m-close" onclick="document.getElementById('setMask').classList.remove('show')">关闭</button>
+    <h2>设置</h2>
+    <div class="m-sub">本地AI V7 · 所有设置只保存在本机</div>
+    <div class="set-row">
+      <span>聊天字号</span>
+      <input type="range" id="fontRange" min="12" max="18" step="1" value="14">
+      <b id="fontVal">14px</b>
+    </div>
+    <div class="set-actions">
+      <button onclick="openTarget('deploy_log')">查看部署日志</button>
+      <button onclick="openTarget('serve_log')">查看服务日志</button>
+      <button onclick="openTarget('install_dir')">打开安装目录</button>
+    </div>
+    <div class="set-actions">
+      <button onclick="restartService()">重启 AI 服务</button>
+      <button class="danger" id="btnReset">恢复默认设置</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-mask" id="aboutMask">
+  <div class="modal">
+    <button class="m-close" id="aboutClose">关闭</button>
+    <h2>版权与免责声明</h2>
+    <div class="m-sub">本地AI · 请仔细阅读</div>
+    <p>本工具为本地AI调度客户端，仅用于调用 Ollama 服务以及一键拉取开源大模型。</p>
+    <p>Ollama 由 Ollama 官方团队开发，遵循 MIT 开源协议；一键部署的模型均为社区开源模型（如通义千问 Qwen 遵循 Apache 2.0 开源协议），模型版权归原作者所有，请遵守对应模型开源许可协议，仅限个人学习使用。</p>
+    <p>软件免费下载使用；您也可以自愿发电支持作者。下载 Ollama 安装包将跳转至 Ollama 官方页面获取原版安装包，本程序不捆绑、不修改 Ollama 本体，不内置、不篡改开源模型文件。</p>
+    <p>发电属于自愿支持，不是购买商品；虚拟资源不支持无理由退款。若遇到链接失效、文件损坏、部署异常问题，可以私信作者，看到后会处理。</p>
+  </div>
+</div>
+<script>
+const OLLAMA = '';
+const API = '/api/chat-proxy';
+let messages = [];
+let busy = false;
+let loadedDoc = null;   // {name, text}
+const chatEl = document.getElementById('chat');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const statusEl = document.getElementById('status');
+const modelSel = document.getElementById('modelSel');
+const loadedEl = document.getElementById('loaded');
+const svcBtn = document.getElementById('svcBtn');
+const runModeSel = document.getElementById('runModeSel');
+async function refreshRunMode() {
+  try {
+    const r = await fetch('/api/runmode', { signal: AbortSignal.timeout(3000) });
+    const j = await r.json();
+    runModeSel.value = j.mode || 'gpu';
+  } catch (e) {}
+}
+runModeSel.onchange = async () => {
+  const mode = runModeSel.value;
+  runModeSel.disabled = true;
+  statusEl.textContent = '切换运行模式，重启服务中…';
+  try {
+    const r = await fetch('/api/runmode', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode }) });
+    const j = await r.json();
+    if (r.status === 409) { statusEl.textContent = j.error || '下载中，暂不能切换'; }
+    else if (r.ok) {
+      if (j.running) {
+        statusEl.textContent = '运行模式已切换（' + j.mode + '）';
+        refreshService(); loadModels();
+      } else {
+        // 服务还在启动/未起来：轮询等待恢复，最多 30 秒
+        statusEl.textContent = '服务重启中…';
+        let ok = false;
+        for (let i = 0; i < 30; i++) {
+          await new Promise(res => setTimeout(res, 1000));
+          try {
+            const s = await fetch('/api/service/status', { signal: AbortSignal.timeout(3000) });
+            const sj = await s.json();
+            if (sj.running) { ok = true; break; }
+          } catch (e) {}
+        }
+        if (ok) {
+          statusEl.textContent = '运行模式已切换（' + j.mode + '）';
+          refreshService(); loadModels();
+        } else {
+          statusEl.textContent = '服务启动失败，请重试';
+        }
+      }
+    }
+    else { statusEl.textContent = '切换失败'; }
+  } catch (e) { statusEl.textContent = '切换失败'; }
+  runModeSel.disabled = false;
+  setTimeout(refreshRunMode, 800);
+};
+refreshRunMode();
+
+// 关于（版权与免责声明）弹窗
+document.getElementById('aboutBtn').onclick = () => {
+  document.getElementById('aboutMask').classList.add('show');
+};
+document.getElementById('aboutClose').onclick = () => {
+  document.getElementById('aboutMask').classList.remove('show');
+};
+document.getElementById('aboutMask').addEventListener('click', (e) => {
+  if (e.target.id === 'aboutMask') document.getElementById('aboutMask').classList.remove('show');
+});
+
+async function refreshService() {
+  try {
+    const r = await fetch('/api/service/status', { signal: AbortSignal.timeout(3000) });
+    const j = await r.json();
+    svcBtn.textContent = j.running ? 'AI服务：开' : 'AI服务：关';
+    svcBtn.classList.toggle('off', !j.running);
+  } catch (e) { svcBtn.textContent = 'AI服务：？'; }
+}
+svcBtn.onclick = async () => {
+  svcBtn.disabled = true;
+  svcBtn.textContent = '切换中…';
+  try {
+    const r = await fetch('/api/service/status', { signal: AbortSignal.timeout(3000) });
+    const j = await r.json();
+    if (j.running) {
+      await fetch('/api/service/stop', { method: 'POST' });
+      svcBtn.textContent = 'AI服务：关'; svcBtn.classList.add('off');
+      updateStatus(false);
+    } else {
+      svcBtn.textContent = '启动中…';
+      let s = await fetch('/api/service/start', { method: 'POST' });
+      let sj = await s.json();
+      if (!sj.running) {
+        await new Promise(res => setTimeout(res, 2200));
+        s = await fetch('/api/service/start', { method: 'POST' });
+        sj = await s.json();
+      }
+      svcBtn.textContent = sj.running ? 'AI服务：开' : 'AI服务：关';
+      svcBtn.classList.toggle('off', !sj.running);
+      updateStatus(sj.running);
+    }
+  } catch (e) { svcBtn.textContent = '切换失败'; }
+  svcBtn.disabled = false;
+};
+
+function addMsg(role, text, extra) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  if (extra) body.innerHTML = extra;
+  else body.textContent = text;
+  d.appendChild(body);
+  if (role === 'assistant') {
+    const bar = document.createElement('div');
+    bar.className = 'msg-actions';
+    const b = document.createElement('button');
+    b.textContent = '复制';
+    b.onclick = () => copyText(body.textContent);
+    const r = document.createElement('button');
+    r.textContent = '重答';
+    r.onclick = () => regenerate();
+    bar.appendChild(b); bar.appendChild(r);
+    d.appendChild(bar);
+  }
+  chatEl.appendChild(d);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return d;
+}
+
+function setBody(el, text) {
+  const b = el && el.querySelector('.msg-body');
+  if (b) b.textContent = text;
+}
+
+function msgText(el) {
+  if (!el) return '';
+  const b = el.querySelector('.msg-body');
+  return b ? b.textContent : el.textContent;
+}
+
+function updateStatus(ok) {
+  statusEl.textContent = ok ? '● 已连接' : '● 未连接';
+  statusEl.style.background = ok ? 'rgba(34,197,94,.25)' : 'rgba(239,68,68,.25)';
+  refreshEnv();
+}
+
+function prettyName(n) {
+  let s = n;
+  s = s.replace(/^modelscope\.cn\//, '');   // 去掉魔搭前缀
+  s = s.replace(/^Qwen\//, '');             // 去掉命名空间
+  s = s.replace(/-Instruct-GGUF$/, '');     // 去掉后缀
+  s = s.replace(/-GGUF$/, '');
+  return s;
+}
+
+async function loadModels() {
+  try {
+    const r = await fetch(OLLAMA + '/api/tags', { signal: AbortSignal.timeout(4000) });
+    const j = await r.json();
+    const names = (j.models || []).map(m => m.name).sort();
+    modelSel.innerHTML = '';
+    if (!names.length) { modelSel.innerHTML = '<option value="">无模型</option>'; return; }
+    const prefer = ['qwen2.5:1.5b', 'qwen2.5:3b', 'qwen2.5vl:3b', 'qwen2.5:7b', 'qwen3:4b',
+                    'Qwen2.5-1.5B', 'Qwen2.5-3B', 'Qwen3-4B', 'Qwen2.5-7B', 'Qwen2.5-3B-VL'];
+    let chosen = names[0];
+    for (const p of prefer) {
+      const hit = names.find(n => n === p || prettyName(n) === p || prettyName(n).startsWith(p));
+      if (hit) { chosen = hit; break; }
+    }
+    names.forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = prettyName(n);
+      if (n === chosen) o.selected = true;
+      modelSel.appendChild(o);
+    });
+  } catch (e) {
+    modelSel.innerHTML = '<option value="">连接失败</option>';
+    setTimeout(loadModels, 3000);
+  }
+}
+
+function buildPayload(model, msgs) {
+  return { model: model, messages: msgs, stream: true };
+}
+
+async function chatStream(model, msgs, onDelta, onDone, onError, signal) {
+  const resp = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payload: buildPayload(model, msgs) }),
+    signal: signal
+  });
+  if (!resp.ok) { const t = await resp.text(); throw makeApiError(resp.status, t); }
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, idx).trim(); buf = buf.slice(idx + 1);
+      if (!line) continue;
+      try {
+        const j = JSON.parse(line);
+        if (j.error) { throw new Error(j.error); }
+        if (j.message && j.message.content) { full += j.message.content; onDelta(full); }
+        if (j.done) { onDone && onDone(); }
+      } catch (e) {}
+    }
+  }
+  return full;
+}
+
+async function chatOnce(model, msgs) {
+  const resp = await fetch(API, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payload: { model: model, messages: msgs, stream: false } })
+  });
+  if (!resp.ok) throw new Error('服务返回 ' + resp.status);
+  const j = await resp.json();
+  return j.message && j.message.content || '';
+}
+
+let abortCtrl = null;
+
+async function runChat(msgs) {
+  const box = addMsg('assistant', '');
+  const typing = document.createElement('div');
+  typing.className = 'typing'; typing.textContent = '思考中…';
+  chatEl.appendChild(typing);
+  busy = true; sendBtn.disabled = true;
+  const stopEl = document.getElementById('stopBtn');
+  if (stopEl) stopEl.style.display = 'inline-block';
+  abortCtrl = new AbortController();
+  try {
+    typing.remove();
+    await chatStream(modelSel.value, msgs, full => {
+      setBody(box, full); chatEl.scrollTop = chatEl.scrollHeight;
+    }, null, null, abortCtrl.signal);
+    messages.push({ role: 'assistant', content: msgText(box) });
+    updateStatus(true);
+  } catch (e) {
+    typing.remove();
+    if (e && e.name === 'AbortError') {
+      const partial = msgText(box);
+      if (partial) { messages.push({ role: 'assistant', content: partial }); }
+      else { box.remove(); }
+      addToast('已停止生成');
+      updateStatus(true);
+    } else {
+      box.remove();
+      showError(e);
+      updateStatus(false);
+    }
+  } finally {
+    busy = false; sendBtn.disabled = false;
+    if (stopEl) stopEl.style.display = 'none';
+    abortCtrl = null;
+    inputEl.focus();
+  }
+}
+
+async function send() {
+  if (busy) return;
+  if (envLocked) { showLock(); return; }
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+  messages.push({ role: 'user', content: text });
+  addMsg('user', text);
+  await runChat(messages.slice());
+}
+
+// ---------- 文档上传 ----------
+document.getElementById('btnDoc').onclick = () => document.getElementById('fileDoc').click();
+document.getElementById('fileDoc').onchange = async e => {
+  const files = Array.from(e.target.files);
+  e.target.value = '';
+  for (const f of files) {
+    addMsg('system-card', '正在读取文件：' + f.name + '…');
+    try {
+      const b64 = await fileToB64(f);
+      const r = await fetch('/api/extract', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name, content_b64: b64 })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || '读取失败');
+      setLoadedDoc(f.name, j.text, j.pages || []);
+      addMsg('system-card', '✅ 已载入文档「' + f.name + '」，共 ' + j.text.length + ' 字，可以直接提问了');
+    } catch (err) {
+      addMsg('error', '读取「' + f.name + '」失败：' + err.message);
+    }
+  }
+};
+
+// ---------- 图片上传 ----------
+document.getElementById('btnImg').onclick = () => document.getElementById('fileImg').click();
+document.getElementById('fileImg').onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const b64 = await fileToB64(f);
+  messages.push({ role: 'user', content: '（图片）' + f.name, images: [b64] });
+  const img = '<img class="thumb" src="data:image/*;base64,' + b64 + '">';
+  addMsg('user', '图片：' + f.name, '<div>' + img + '</div>');
+  const box = addMsg('assistant', '');
+  const typing = document.createElement('div');
+  typing.className = 'typing'; typing.textContent = '识别中…';
+  chatEl.appendChild(typing);
+  busy = true; sendBtn.disabled = true;
+  try {
+    typing.remove();
+    await chatStream(modelSel.value, messages.slice(), full => { setBody(box, full); chatEl.scrollTop = chatEl.scrollHeight; });
+    messages.push({ role: 'assistant', content: msgText(box) });
+  } catch (err) {
+    typing.remove(); box.remove();
+    addMsg('error', '识别失败：' + err.message + '（图片识别需要视觉模型，如 qwen2.5vl）');
+  } finally { busy = false; sendBtn.disabled = false; }
+};
+
+// ---------- 批量处理 ----------
+document.getElementById('btnBatch').onclick = () => {
+  const p = document.getElementById('batchPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+};
+document.getElementById('btnChooseDir').onclick = () => document.getElementById('fileDir').click();
+let batchFiles = [];
+document.getElementById('fileDir').onchange = async e => {
+  const files = Array.from(e.target.files);
+  e.target.value = '';
+  batchFiles = files.filter(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    return ['docx','xlsx','pdf','pptx','txt','md','csv','log','json','xml'].includes(ext);
+  }).slice(0, 60);
+  const list = document.getElementById('batchList');
+  list.innerHTML = '';
+  batchFiles.forEach((f, i) => {
+    const d = document.createElement('div');
+    d.textContent = (i + 1) + '. ' + f.name;
+    list.appendChild(d);
+  });
+  if (!batchFiles.length) list.innerHTML = '<div class="err">未找到支持的文档文件</div>';
+};
+document.getElementById('btnRunBatch').onclick = async () => {
+  const req = document.getElementById('batchReq').value.trim();
+  const list = document.getElementById('batchList');
+  const btn = document.getElementById('btnRunBatch');
+  if (!batchFiles.length) { list.innerHTML = '<div class="err">请先选择文件夹</div>'; return; }
+  if (!req) { list.innerHTML = '<div class="err">请填写处理要求</div>'; return; }
+  btn.disabled = true;
+  const results = [];
+  list.innerHTML = '';
+  for (let i = 0; i < batchFiles.length; i++) {
+    const f = batchFiles[i];
+    const d = document.createElement('div');
+    d.textContent = '⏳ 处理中 ' + (i + 1) + '/' + batchFiles.length + '：' + f.name;
+    list.appendChild(d);
+    try {
+      const b64 = await fileToB64(f);
+      const r = await fetch('/api/extract', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name, content_b64: b64 })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || '读取失败');
+      const docText = (j.text || '').slice(0, 12000);
+      const ans = await chatOnce(modelSel.value, [
+        { role: 'system', content: '你是一个文档批处理助手。请根据处理要求，针对给定的单个文档输出结果。要求：' + req },
+        { role: 'user', content: '文件名：' + f.name + '\n文档内容：\n' + docText }
+      ]);
+      results.push({ name: f.name, text: ans });
+      d.className = 'ok';
+      d.textContent = '✅ ' + (i + 1) + '/' + batchFiles.length + '：' + f.name + '（' + ans.length + '字）';
+    } catch (err) {
+      results.push({ name: f.name, text: '【失败】' + err.message });
+      d.className = 'err';
+      d.textContent = '❌ ' + (i + 1) + '/' + batchFiles.length + '：' + f.name + '（' + err.message + '）';
+    }
+  }
+  // 导出 CSV
+  let csv = '\ufeff文件名,处理结果\n';
+  results.forEach(r => {
+    csv += '"' + (r.name || '').replace(/"/g, '""') + '","' + (r.text || '').replace(/"/g, '""').replace(/\n/g, ' ') + '"\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '批量处理结果.csv';
+  a.click();
+  const done = document.createElement('div');
+  done.className = 'ok';
+  done.textContent = '🎉 批量处理完成，共 ' + results.length + ' 个文件，已导出「批量处理结果.csv」';
+  list.appendChild(done);
+  btn.disabled = false;
+};
+
+// ---------- 工具 ----------
+function fileToB64(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result.split(',')[1] || '');
+    fr.onerror = () => reject(new Error('读取文件失败'));
+    fr.readAsDataURL(file);
+  });
+}
+
+function setLoadedDoc(name, text, pages) {
+  loadedDoc = { name, text };
+  messages = messages.filter(m => m.role !== 'system');
+  messages.unshift({ role: 'system', content: '以下是你需要参考的文档内容（文件名：' + name + '）：\n' + text });
+  loadedEl.style.display = 'inline';
+  loadedEl.innerHTML = '📄 已载入：' + name + '（' + text.length + '字）<button onclick="clearDoc()">×清除</button>';
+}
+window.clearDoc = function() {
+  loadedDoc = null;
+  messages = messages.filter(m => m.role !== 'system');
+  loadedEl.style.display = 'none';
+};
+
+sendBtn.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+
+addWelcome();
+loadModels();
+updateStatus(true);
+refreshService();
+inputEl.focus();
+function addWelcome() { addMsg('assistant', '你好！我是本地AI，运行在你自己的电脑上，完全免费、断网可用。\n\n我可以：\n📄 阅读 Word / Excel / PDF / PPT / 文本文件后回答你的问题\n🖼️ 识别图片内容（使用视觉模型）\n🗂️ 批量处理一整个文件夹的文档\n\n直接开始提问吧！'); }
+
+// ================== 环境锁定 / 错误码 / 新功能 ==================
+let envLocked = true;
+
+function isLocked() { return !!envLocked; }
+
+function lockTargets() {
+  return [
+    inputEl, sendBtn,
+    document.getElementById('stopBtn'),
+    document.getElementById('btnDoc'),
+    document.getElementById('btnImg'),
+    document.getElementById('btnBatch'),
+    modelSel, runModeSel,
+  ].filter(Boolean);
+}
+
+
+
+function applyLock() {
+  const on = !!envLocked;
+  lockTargets().forEach(el => el.classList.toggle('locked', on));
+  inputEl.placeholder = on
+    ? '当前没有可运行的环境，请先点右上角「AI服务」开启，或前往部署向导'
+    : '输入你的问题，按 Enter 发送（Shift+Enter 换行）。已上传的文档会自动作为背景知识';
+  const hint = document.getElementById('envHint');
+  if (hint) hint.style.display = on ? 'inline-flex' : 'none';
+}
+
+function showLock() {
+  const m = document.getElementById('envLockMask');
+  if (m) m.classList.add('show');
+}
+
+async function refreshEnv() {
+  let svc = false, models = [];
+  try {
+    const j = await (await fetch('/api/service/status', { cache: 'no-store' })).json();
+    svc = !!j.running;
+  } catch (e) {}
+  try {
+    const j = await (await fetch('/api/tags', { cache: 'no-store' })).json();
+    models = (j.models || []).map(m => m.name);
+  } catch (e) {}
+  if (svcBtn) {
+    svcBtn.textContent = svc ? 'AI服务：开' : 'AI服务：关';
+    svcBtn.classList.toggle('off', !svc);
+  }
+  const locked = !(svc && models.length > 0);
+  if (locked !== envLocked) { envLocked = locked; applyLock(); }
+  return { svc, models };
+}
+
+function makeApiError(status, text) {
+  let code = 'E' + status, hint = '', msg = '服务返回 ' + status;
+  try {
+    const j = JSON.parse(text || '{}');
+    if (j && j.error) msg = j.error;
+    if (j && j.code) code = j.code;
+    if (j && j.hint) hint = j.hint;
+  } catch (e) {
+    if (text) msg += '：' + String(text).slice(0, 140);
+  }
+  const err = new Error(msg);
+  err.code = code;
+  err.hint = hint || '先确认「AI服务」已开启；仍有问题请把错误码发给作者';
+  return err;
+}
+
+function nowText() {
+  return new Date().toLocaleString('zh-CN', { hour12: false });
+}
+
+function showError(e) {
+  const code = (e && e.code) || 'E5000';
+  const msg = (e && e.message) || String(e);
+  const hint = (e && e.hint) || '请把错误码发给作者，或打开「设置 → 查看部署日志」';
+  const t = nowText();
+  const d = addMsg('error', '出错了：' + msg + '\n错误码 ' + code + ' · ' + t + '\n建议：' + hint);
+  const line = document.createElement('span');
+  line.className = 'err-line';
+  const b = document.createElement('button');
+  b.textContent = '复制错误信息';
+  b.onclick = () => copyText(code + ' | ' + t + ' | ' + msg + ' | ' + hint);
+  line.appendChild(b);
+  const d2 = document.createElement('button');
+  d2.textContent = '环境自检';
+  d2.onclick = () => openDiag();
+  line.appendChild(d2);
+  d.appendChild(line);
+  addToast('出错了，错误码 ' + code);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text || '');
+    addToast('已复制');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text || '';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); addToast('已复制'); } catch (err) { addToast('复制失败'); }
+    ta.remove();
+  }
+}
+
+let toastTimer = null;
+function addToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+async function regenerate() {
+  if (busy) { addToast('正在生成，请先点「停止」'); return; }
+  if (envLocked) { showLock(); return; }
+  const last = messages[messages.length - 1];
+  if (last && last.role === 'assistant') messages.pop();
+  const bubbles = chatEl.querySelectorAll('.msg.assistant');
+  if (bubbles.length) bubbles[bubbles.length - 1].remove();
+  if (!messages.length || messages[messages.length - 1].role !== 'user') {
+    addToast('没有可重新回答的问题');
+    return;
+  }
+  await runChat(messages.slice());
+}
+
+function exportChat() {
+  const lines = ['# 本地AI 对话记录', '', '导出时间：' + nowText(), ''];
+  document.querySelectorAll('#chat .msg.user, #chat .msg.assistant').forEach(el => {
+    const role = el.classList.contains('user') ? '我' : '本地AI';
+    lines.push('**' + role + '**：', '', msgText(el).trim(), '');
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '本地AI_对话_' + new Date().toISOString().slice(0, 10) + '.md';
+  a.click();
+  addToast('已导出对话');
+}
+
+function newChat() {
+  if (busy) { addToast('正在生成，请先点「停止」'); return; }
+  if (!confirm('清空当前对话？（已上传的文档不会清除）')) return;
+  messages = messages.filter(m => m.role === 'system');
+  chatEl.innerHTML = '';
+  addWelcome();
+  addToast('已新建对话');
+}
+
+async function openDiag() {
+  const mask = document.getElementById('diagMask');
+  const box = document.getElementById('diagBody');
+  mask.classList.add('show');
+  box.innerHTML = '<div style="color:#6b7280;font-size:13px">正在检查…</div>';
+  try {
+    const j = await (await fetch('/api/diag', { cache: 'no-store' })).json();
+    window.__lastDiag = j;
+    box.innerHTML = '';
+    const sum = document.createElement('div');
+    sum.className = 'diag-sum' + (j.ok ? '' : ' bad');
+    sum.textContent = j.ok ? '一切正常，可以开始对话。' : ('发现问题：' + (j.hint || '请按上面的提示处理'));
+    box.appendChild(sum);
+    (j.items || []).forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'diag-item' + (it.ok ? '' : ' bad');
+      const ic = document.createElement('span');
+      ic.textContent = it.ok ? '✅' : '❌';
+      const nm = document.createElement('span');
+      nm.innerHTML = '<b>' + escapeHtml(it.name) + '</b><br><span class="dt">' +
+        escapeHtml(it.detail) + '</span>';
+      nm.style.flex = '1';
+      row.appendChild(ic); row.appendChild(nm);
+      if (!it.ok && it.code) {
+        const c = document.createElement('span');
+        c.className = 'code';
+        c.textContent = it.code;
+        row.appendChild(c);
+      }
+      box.appendChild(row);
+    });
+  } catch (e) {
+    box.textContent = '自检失败：' + e.message;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+async function openTarget(what) {
+  try {
+    const r = await fetch('/api/open', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ what })
+    });
+    const j = await r.json();
+    if (!j.ok) addToast('打开失败：' + (j.error || '未知原因') + (j.code ? '（' + j.code + '）' : ''));
+  } catch (e) {
+    addToast('打开失败：' + e.message);
+  }
+}
+
+async function restartService() {
+  addToast('正在重启 AI 服务…');
+  try {
+    await fetch('/api/service/stop', { method: 'POST' });
+    await new Promise(r => setTimeout(r, 1200));
+    let j = await (await fetch('/api/service/start', { method: 'POST' })).json();
+    if (!j.running) {
+      await new Promise(r => setTimeout(r, 2200));
+      j = await (await fetch('/api/service/start', { method: 'POST' })).json();
+    }
+    addToast(j.running ? 'AI 服务已启动' : 'AI 服务启动失败，请点「自检」查看原因');
+    refreshEnv();
+  } catch (e) {
+    addToast('重启失败：' + e.message);
+  }
+}
+
+function applyFont(px) {
+  document.documentElement.style.setProperty('--chat-font', px + 'px');
+  const v = document.getElementById('fontVal');
+  if (v) v.textContent = px + 'px';
+  const r = document.getElementById('fontRange');
+  if (r) r.value = px;
+}
+
+(function wireExtra() {
+  const diagBtn = document.getElementById('diagBtn');
+  if (diagBtn) diagBtn.onclick = openDiag;
+  const setBtn = document.getElementById('setBtn');
+  if (setBtn) setBtn.onclick = () => {
+    document.getElementById('setMask').classList.add('show');
+    const px = parseInt(localStorage.getItem('la_font') || '14', 10);
+    applyFont(px);
+  };
+  const stopEl = document.getElementById('stopBtn');
+  if (stopEl) stopEl.onclick = () => { if (abortCtrl) abortCtrl.abort(); };
+  const btnNew = document.getElementById('btnNew');
+  if (btnNew) btnNew.onclick = newChat;
+  const btnExport = document.getElementById('btnExport');
+  if (btnExport) btnExport.onclick = exportChat;
+  const hint = document.getElementById('envHint');
+  if (hint) hint.onclick = showLock;
+  const diagCopy = document.getElementById('diagCopy');
+  if (diagCopy) diagCopy.onclick = () => {
+    const j = window.__lastDiag;
+    if (!j) { addToast('还没有自检结果'); return; }
+    const txt = ['本地AI 环境自检', '时间：' + j.time, '版本：' + j.version, ''].concat(
+      (j.items || []).map(i => (i.ok ? '[OK] ' : '[!!] ') + i.name + '：' + i.detail + (i.code ? ' （' + i.code + '）' : ''))
+    ).join('\n');
+    copyText(txt);
+  };
+  const rng = document.getElementById('fontRange');
+  if (rng) rng.oninput = () => {
+    const px = parseInt(rng.value, 10);
+    applyFont(px);
+    localStorage.setItem('la_font', String(px));
+  };
+  const reset = document.getElementById('btnReset');
+  if (reset) reset.onclick = () => {
+    localStorage.removeItem('la_font');
+    applyFont(14);
+    addToast('已恢复默认设置');
+  };
+  // 点灰按钮 → 弹「无运行环境」
+  document.addEventListener('click', ev => {
+    const t = ev.target.closest && ev.target.closest('.locked');
+    if (t) { ev.preventDefault(); ev.stopPropagation(); showLock(); }
+  }, true);
+  applyFont(parseInt(localStorage.getItem('la_font') || '14', 10));
+  applyLock();
+  refreshEnv();
+  setInterval(refreshEnv, 4000);
+})();
+</script>
+</body>
+</html>

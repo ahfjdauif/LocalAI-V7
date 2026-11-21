@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地AI · 启动中</title>
+<style>
+  :root{--ink:#e8efff}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;color:var(--ink);
+    background:radial-gradient(1000px 560px at 50% -12%,#1b3f86 0%,#0f2650 44%,#0a1730 100%);
+    display:grid;place-items:center;overflow:hidden;opacity:0;animation:pageIn .45s ease-out forwards}
+  @keyframes pageIn{to{opacity:1}}
+  body.leaving{animation:pageOut .38s ease-in forwards}
+  @keyframes pageOut{to{opacity:0;transform:scale(.992)}}
+  .glow{position:fixed;width:640px;height:640px;border-radius:50%;
+    background:radial-gradient(circle,rgba(37,99,235,.34),transparent 62%);
+    animation:breathe 4s ease-in-out infinite;pointer-events:none}
+  @keyframes breathe{0%,100%{transform:scale(.94);opacity:.55}50%{transform:scale(1.05);opacity:.92}}
+  .stage{position:relative;text-align:center;transform:translateY(-4px)}
+  .ring{position:relative;width:112px;height:112px;margin:0 auto 22px;display:grid;place-items:center}
+  .ring::before{content:"";position:absolute;inset:-9px;border-radius:50%;
+    border:2px solid rgba(96,165,250,.18);border-top-color:rgba(96,165,250,.85);
+    border-right-color:rgba(96,165,250,.35);animation:spin 2.4s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .icon{position:relative;width:104px;height:104px;border-radius:30px;overflow:hidden;
+    background:linear-gradient(140deg,#60a5fa,#2563eb);display:grid;place-items:center;
+    color:#fff;font-weight:800;font-size:38px;letter-spacing:1px;
+    box-shadow:0 18px 44px rgba(2,32,71,.55),inset 0 2px 0 rgba(255,255,255,.35);
+    animation:iconIn .55s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes iconIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+  .icon img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  h1{font-size:27px;letter-spacing:5px;font-weight:700;animation:fadeUp .5s .08s ease-out both}
+  .ver{margin-top:8px;font-size:12.5px;letter-spacing:2px;color:#8fb3ea;
+    animation:fadeUp .5s .14s ease-out both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .steps{margin:26px auto 0;width:272px;text-align:left;display:flex;flex-direction:column;gap:11px}
+  .step{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#7f98c4;
+    opacity:.5;transition:color .35s ease,opacity .35s ease}
+  .dot{width:16px;height:16px;border-radius:50%;border:1.5px solid #42618f;flex-shrink:0;
+    display:grid;place-items:center;font-size:9px;color:transparent;
+    transition:background .35s ease,border-color .35s ease,transform .35s cubic-bezier(.2,.8,.3,1)}
+  .step.active{color:#dbe8ff;opacity:1}
+  .step.active .dot{border-color:#60a5fa;box-shadow:0 0 0 4px rgba(96,165,250,.14)}
+  .step.done{color:#9ec5ff;opacity:1}
+  .step.done .dot{background:linear-gradient(135deg,#3b82f6,#0ea5e9);border-color:transparent;
+    color:#fff;transform:scale(1.06)}
+  .bar{margin:26px auto 0;width:272px;height:4px;border-radius:999px;background:rgba(255,255,255,.1);
+    overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,#3b82f6,#67e8f9);transition:width .45s ease}
+  .bar i::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+    animation:shine 1.8s linear infinite;transform:translateX(-100%)}
+  @keyframes shine{to{transform:translateX(100%)}}
+  .tip{margin-top:16px;font-size:11.5px;color:#6d86b1;letter-spacing:.5px;height:17px;
+    transition:opacity .3s ease}
+  .tip.swap{opacity:0}
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="stage">
+    <div class="ring">
+      <div class="icon"><span>AI</span><img src="app.ico" alt="" onerror="this.remove()"></div>
+    </div>
+    <h1>本地AI</h1>
+    <div class="ver">在线部署版 V7</div>
+    <div class="steps">
+      <div class="step" data-k="ui"><span class="dot">✓</span><span>初始化界面</span></div>
+      <div class="step" data-k="env"><span class="dot">✓</span><span>准备运行环境</span></div>
+      <div class="step" data-k="model"><span class="dot">✓</span><span>检查本地模型</span></div>
+      <div class="step" data-k="svc"><span class="dot">✓</span><span>启动 AI 服务</span></div>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="tip" id="tip">正在准备…</div>
+  </div>
+<script>
+(function () {
+  var t0 = Date.now();
+  var MIN = 2200, SVC_WAIT = 20000, HARD_MAX = 45000;
+  var env = false, model = false, svc = false, leaving = false;
+  var shown = 0, target = 8;          // 进度条缓动
+  var tipEl = document.getElementById('tip');
+  var lastTip = '';
+  var steps = {};
+  document.querySelectorAll('.step').forEach(function (el) { steps[el.dataset.k] = el; });
+
+  function mark(key, state) {
+    var el = steps[key];
+    if (!el) return;
+    if (state === 'done') { el.classList.remove('active'); el.classList.add('done'); }
+    else if (state === 'active') { el.classList.remove('done'); el.classList.add('active'); }
+  }
+
+  // 进度条用 rAF 追目标值，避免跳变
+  function tickBar() {
+    shown += (target - shown) * 0.12;
+    if (Math.abs(target - shown) < 0.3) shown = target;
+    document.getElementById('bar').style.width = shown.toFixed(1) + '%';
+    if (!leaving) requestAnimationFrame(tickBar);
+  }
+
+  function setTip(text) {
+    if (text === lastTip) return;
+    lastTip = text;
+    tipEl.classList.add('swap');
+    setTimeout(function () { tipEl.textContent = text; tipEl.classList.remove('swap'); }, 160);
+  }
+
+  function paint() {
+    mark('ui', 'done');
+    mark('env', env ? 'done' : 'active');
+    if (env) mark('model', model ? 'done' : 'active');
+    if (model) mark('svc', svc ? 'done' : 'active');
+    var n = 1 + (env ? 1 : 0) + (model ? 1 : 0) + (svc ? 1 : 0);
+    target = 8 + n * 21;
+    if (model && !svc) target = Math.min(92, target + 6);
+    if (!env) setTip('正在检查运行环境…');
+    else if (!model) setTip('正在检查本地模型…');
+    else if (!svc) setTip('正在启动 AI 服务，首次加载会稍慢…');
+    else setTip('准备就绪，正在进入…');
+  }
+
+  function go(url) {
+    if (leaving) return;
+    leaving = true;
+    target = 100;
+    setTimeout(function () {
+      document.body.classList.add('leaving');
+      setTimeout(function () { location.replace(url); }, 380);
+    }, 120);
+  }
+
+  function decide() {
+    var el = Date.now() - t0;
+    if (env && model && svc) { if (el >= MIN) go('chat.html'); return; }
+    if (!env || !model) { if (el >= MIN) go('setup.html'); return; }
+    if (el >= SVC_WAIT) go('chat.html');
+  }
+
+  async function tick() {
+    try {
+      var s = await (await fetch('/api/setup/status', { cache: 'no-store' })).json();
+      env = !!s.env; model = !!s.has_model;
+    } catch (e) {}
+    try {
+      var s2 = await (await fetch('/api/service/status', { cache: 'no-store' })).json();
+      svc = !!s2.running;
+    } catch (e) {}
+    paint(); decide();
+  }
+
+  paint();
+  requestAnimationFrame(tickBar);
+  tick();
+  setInterval(tick, 350);
+  setTimeout(function () { if (!leaving) go(env && model ? 'chat.html' : 'setup.html'); }, HARD_MAX);
+  // 第一帧画好后通知后端关掉原生闪屏
+  setTimeout(function () { fetch('/api/ui-ready').catch(function () {}); }, 60);
+})();
+</script>
+</body>
+</html>
